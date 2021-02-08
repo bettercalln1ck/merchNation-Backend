@@ -5,10 +5,10 @@ var router = express.Router();
 var passport=require('passport');
 var authenticate=require('../authenticate');
 var uniqueValidator = require('mongoose-unique-validator');
-const cors = require('./cors');
+//const cors = require('./cors');
 
 router.route('/verifyToken')
-.get(cors.corsWithOptions,authenticate.verifyUser,(req, res, next)=> {
+.get(authenticate.verifyUser,(req, res, next)=> {
   User.findById(req.user._id)
   .then((user) =>{
   res.statusCode=200;
@@ -20,9 +20,10 @@ router.route('/verifyToken')
   .catch((err) => next(err));
 });
 
-router.route('/')
-.get(cors.corsWithOptions,authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next)=> {
-  User.find({})
+router.route('/becomeSeller')
+.get(authenticate.verifyUser,(req, res, next)=> {
+  User.findByIdAndUpdate(req.user._id,{
+    $set: {"seller":"true"} },{new: true})
 	.then((user) =>{
 	res.statusCode=200;
 	res.setHeader('Content-Type','application/json');
@@ -31,8 +32,19 @@ router.route('/')
 	.catch((err) => next(err));
 });
 
+router.route('/')
+.get(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next)=> {
+  User.find({})
+	.then((user) =>{
+	res.statusCode=200;
+	res.setHeader('Content-Type','application/json');
+	res.json({success: true,user});
+	},(err) =>next(err))
+	.catch((err) => next(err));
+});
+
 router.route('/profile/:userId')
-.get(cors.corsWithOptions,authenticate.verifyUser,(req, res, next)=> {
+.get(authenticate.verifyUser,(req, res, next)=> {
   User.findById(req.params.userId)
   .then((user) =>{
       res.statusCode=200;
@@ -46,7 +58,7 @@ router.route('/profile/:userId')
   },(err) => next(err))
     .catch((err) =>next(err));
 })
-.put(cors.corsWithOptions, authenticate.verifyUser, (req,res,next) => {
+.put( authenticate.verifyUser, (req,res,next) => {
     User.findById(req.params.userId)
     .then((user) => {
         if (user != null) {
@@ -80,7 +92,7 @@ router.route('/profile/:userId')
     .catch((err) => next(err));
 });
 
-router.post('/signup', (req, res, next) => {
+router.post('/signup',(req, res, next) => {
   User.register(new User({username: req.body.username}), 
     req.body.password, (err, user) => {
     if(err) {
@@ -103,17 +115,6 @@ router.post('/signup', (req, res, next) => {
 
         passport.authenticate('local')(req, res, () => {
           res.statusCode = 200;
-          res.setHeader('Access-Control-Allow-Origin', '*');
-
-          // Request methods you wish to allow
-          res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-      
-          // Request headers you wish to allow
-          res.setHeader('Access-Control-Allow-Headers', 'Origin,X-Requested-With,content-type');
-      
-          // Set to true if you need the website to include cookies in the requests sent
-          // to the API (e.g. in case you use sessions)
-          res.setHeader('Access-Control-Allow-Credentials', true);
           res.setHeader('Content-Type', 'application/json');
           res.json({success: true,status: 'Registration Successful!'});
         });
@@ -122,16 +123,17 @@ router.post('/signup', (req, res, next) => {
   });
 });
 
-router.post('/login',cors.corsWithOptions,passport.authenticate('local'),(req,res,next) =>{
+router.post('/login',(req,res,next) =>{
+      passport.authenticate('local')(req,res,() =>{
 			var token=authenticate.getToken({_id:req.user._id});
 			res.statusCode=200;		
 			res.setHeader('Content-Type','application/json');
 			res.json({success: true,userId:req.user._id,token:token,status:'You are successfully login!'});
-
+    });
 });
 
 
-router.get('/logout',cors.corsWithOptions,(req,res) =>{
+router.get('/logout',(req,res) =>{
 	if(req.session){
 		req.session.destroy();
 		res.clearCookie('session-id');

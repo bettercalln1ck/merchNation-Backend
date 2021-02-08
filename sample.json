@@ -1,0 +1,58 @@
+{
+	"product": {
+		"_id": "dasjfdklahfjasdfhsadkjlasdf65f65fdfd8f65daf6847a6f8fd",
+		"name": "Effe 2021 tshirt",
+		"sellerId": "fdakslfjsadfhkdsaf",
+		"isVisible": true,
+		"type": {
+			"name": "t-shirt",
+			"colors": [
+				{
+					"name": "black",
+					"code": "#000000"
+				}
+			],
+			"variants": [
+				{
+					"color": "blue",
+					"size": "XL",
+					"unitsInStock": "6"
+				}
+			]
+		},
+		"orignalPrice": 200,
+		"offerPercent": 10,
+		"review": [{
+			"comment": "this is a nice shirt",
+			"rating": 4,
+			"autherId": "dfjadsfhjdasfhjasdfhkfhasdk"
+		}]
+	},
+	"order": {
+		"_id": "hfjdashfjd8fudsu9fuh8936746r0b9b7a7",
+		"productId": "fda7uifhluaihf9837y49yr",
+		"buyerId": "fdjahfjkhfasdk",
+		"quantity": 2,
+		"size": "XL",
+		"color": "blue",
+		"shippingAddress": "fdahh dfnj fmsda fjh ndfsa dfashuhi ew jihfjhewj hfjkdashflh",
+		"orderTime": "fdjfdhjfdsa",
+		"estimatedDeliveryTime": "fdasf",
+		"deliveryStatus": "fdjasflsaf",
+		"paymentId": "fdjhfd"
+	},
+	"user": {
+		"_id": "fdjahfjkasdfhdas",
+		"firstName": "fdsklafj",
+		"lastName": "fdajksfhsadf",
+		"userName": "fdasfjhklfjkdaf",
+		"password": "fdjshfkjsdahff",
+		"pastOrders": [],
+		"currentOrders": [],
+		"addresses": [],
+		"type": "buyer/seller/admin",
+		"onlySeller": {
+			"Products": []
+		}
+	}
+}
