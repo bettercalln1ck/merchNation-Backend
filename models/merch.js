@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 require('mongoose-currency').loadType(mongoose);
 const Currency = mongoose.Types.Currency;
+var Float = require('mongoose-float').loadType(mongoose, 4);
 
 var Rating =new Schema({
     author:  {
@@ -56,10 +57,7 @@ var Category=new Schema({
         required:true
     },
     colors:[Color],
-    variants:[{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Rating'
-    }]
+    variants:[Varient]
 })
 
 
@@ -77,7 +75,7 @@ const merchSchema= new Schema({
         required:true
     },
     offerPercent:{
-        type: Double,
+        type: Float,
         required:true
     },
     category:Category,

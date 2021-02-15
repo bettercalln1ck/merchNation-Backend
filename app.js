@@ -17,6 +17,7 @@ const connect = mongoose.connect(url);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+var merchRouter = require('./routes/merchs');
 
 var app = express();
 
@@ -67,6 +68,8 @@ app.use(passport.session());
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+app.use('/merchs',merchRouter);
+
 
 function auth(req,res,next) {
   //	console.log(req.session);

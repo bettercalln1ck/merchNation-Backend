@@ -49,7 +49,7 @@ exports.verifyAdmin=(req,res,next)=>{
 	}
 };
 
-exports.verifyAdmin=(req,res,next)=>{
+exports.verifySeller=(req,res,next)=>{
 	if(req.user.seller){
 		next();
 		} else{

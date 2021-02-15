@@ -12,6 +12,14 @@ var User=new Schema({
 		type:String,
 		default:''
 	},
+	admin:{
+		type:Boolean,
+		default:false
+	},
+	seller:{
+		type:Boolean,
+		default:false
+	},
 	userType:{
 		type:String,
 		default:''
@@ -26,14 +34,14 @@ var User=new Schema({
 		type: mongoose.Schema.Types.ObjectId,
         ref: 'Merch'
 	}],
-	wishList:{
+	wishList:[{
 		type: mongoose.Schema.Types.ObjectId,
         ref: 'Merch'
-	},
-	pastOrders:{
+	}],
+	pastOrders:[{
 		type: mongoose.Schema.Types.ObjectId,
         ref: 'Merch'
-	}
+	}]
     },
     {
         timestamps: true
