@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
 const Merchs = require('../models/merch');
+const Users = require('../models/user')
 
 const merchRouter = express.Router();
 var authenticate = require('../authenticate');
@@ -17,9 +18,14 @@ merchRouter.route('/addMerch')
     {
         Merchs.create(req.body)
         .then((merch)=>{
+            Merchs.findById(merch._id)
+            .populate('seller')
+            .then((merch) =>{
+            merch.seller=req.user._id;
             res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.json({success:true,merch});
+            })
         })
     }else{
         err = new Error('Merch info not found in request body');
@@ -104,14 +110,42 @@ merchRouter.route('/:merchId/addVarients')
 .options( (req, res) => {res.sendStatus(200); })
 .post(authenticate.verifyUser,authenticate.verifySeller,(req,res,next)=>{
     Merchs.findByIdAndUpdate(req.params.merchId,{
-        $push: {category: { variants : req.body}}
-    },{new:true})
-    .then((merch) =>{
+        $push:{'category.variants': req.body} 
+    },{new:true},function(err,result){
+         if(err){
+             res.send(err);
+         }
         res.statusCode=200;
         res.setHeader('Content-Type','application/json');
-        res.json({success:true,merch});
+        res.json({success:true,result});
     },(err) => next(err))
     .catch((err) => next(err));
-})
+});
+
+merchRouter.route('/:merchId/buy')
+.options( (req, res) => {res.sendStatus(200); })
+.post(authenticate.verifyUser,(req,res,next)=>{
+Merchs.findOneAndUpdate({_id:req.params.merchId,'category.variants':{$elemMatch:{
+    "color":req.body.color,"size":req.body.size   
+}}},{
+    $inc:{'category.variants.$.unitsInStock':req.body.unitsInStock}
+},{new:true},function(err,result){
+         if(err){
+             res.send(err);
+         }
+        Users.findByIdAndUpdate(req.user._id,{
+            $push:{pastOrders:{'color':req.body.color,'size':req.body.size,'units':-1*req.body.unitsInStock,'merch':result}
+        }},{new:true},function(err,user){
+            if(err){
+                res.send(err);
+            }
+        });
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,result});
+    },(err) => next(err))
+    .catch((err) => next(err));
+
+});
 
 module.exports=merchRouter;

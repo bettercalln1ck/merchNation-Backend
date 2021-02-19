@@ -43,37 +43,27 @@ router.route('/')
 	.catch((err) => next(err));
 });
 
-router.route('/profile/:userId')
+router.route('/profile')
 .get(authenticate.verifyUser,(req, res, next)=> {
-  User.findById(req.params.userId)
+  User.findById(req.user._id)
+  .populate('pastOrders.merch')
   .then((user) =>{
       res.statusCode=200;
       res.setHeader('Content-Type', 'application/json');
-  //    if(user.followers.includes(req.user._id)){
-        res.json({success: true,userId:user._id,username:user.username,firstname: user.firstname,lastname: user.lastname});
- //     }
- //     else{
- //       res.json({success: true,userId:user._id,username:user.username,firstname: user.firstname,lastname: user.lastname});
- //     }
+        res.json({success: true,user});
   },(err) => next(err))
     .catch((err) =>next(err));
 })
 .put( authenticate.verifyUser, (req,res,next) => {
-    User.findById(req.params.userId)
+    User.findById(req.user._id)
     .then((user) => {
         if (user != null) {
-            if (!user._id.equals(req.user._id)) {
-                var err = new Error('You are not authorize to edit other people profile!');
-                err.status = 403;
-                return next(err);
-            }
-            console.log(req.body);
-            User.findByIdAndUpdate(req.params.userId, 
+            User.findByIdAndUpdate(req.user._id, 
               {$set:req.body
 
           },{ new: true })
             .then((user) => {
-                User.findById(req.params.userId)
+                User.findById(req.user._id)
                 .then((user) => {
 
 
@@ -84,7 +74,7 @@ router.route('/profile/:userId')
             }, (err) => next(err));
         }
         else {
-            err = new Error('User ' + req.params.userId + ' not found');
+            err = new Error('User ' + req.user._id+ ' not found');
             err.status = 404;
             return next(err);            
         }

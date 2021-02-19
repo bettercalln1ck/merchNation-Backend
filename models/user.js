@@ -3,6 +3,27 @@ var Schema=mongoose.Schema;
 
 var passportLocalMongoose=require('passport-local-mongoose');
 
+var Product=new Schema({
+	color:{
+        type:String,
+        required:true
+    },
+    size:{
+        type:String,
+        enum: ['L','XL'],
+        required: true
+    },
+	units:{
+		type:Number,
+        min: 0,
+        required: true
+	},
+	merch:{
+		type: mongoose.Schema.Types.ObjectId,
+        ref: 'Merch'
+	}
+})
+
 var User=new Schema({
 	firstName:{
 		type:String,
@@ -24,6 +45,10 @@ var User=new Schema({
 		type:String,
 		default:''
 	},
+	picture:{
+		type:String,
+		default:''
+	},
 	shippingAdd:{
 		type: Array,
 		contains:{
@@ -38,10 +63,7 @@ var User=new Schema({
 		type: mongoose.Schema.Types.ObjectId,
         ref: 'Merch'
 	}],
-	pastOrders:[{
-		type: mongoose.Schema.Types.ObjectId,
-        ref: 'Merch'
-	}]
+	pastOrders:[Product]
     },
     {
         timestamps: true

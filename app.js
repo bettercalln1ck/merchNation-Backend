@@ -9,6 +9,7 @@ const mongoose =require('mongoose');
 var passport=require('passport');
 var authenticate=require('./authenticate');
 var config=require('./config');
+require('dotenv').config()
 
 //var jade = require('jade');
 
@@ -18,6 +19,7 @@ const connect = mongoose.connect(url);
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var merchRouter = require('./routes/merchs');
+var uploadRouter =require('./routes/uploadRouter')
 
 var app = express();
 
@@ -69,6 +71,7 @@ app.use(passport.session());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/merchs',merchRouter);
+app.use('/upload',uploadRouter);
 
 
 function auth(req,res,next) {
