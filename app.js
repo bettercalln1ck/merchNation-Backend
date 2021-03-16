@@ -11,6 +11,7 @@ var authenticate=require('./authenticate');
 var config=require('./config');
 require('dotenv').config()
 
+
 //var jade = require('jade');
 
 const url = config.mongoUrl;
@@ -22,6 +23,8 @@ var merchRouter = require('./routes/merchs');
 var uploadRouter =require('./routes/uploadRouter')
 
 var app = express();
+
+app.use(express.static("./public/"));
 
 app.disable('etag');
 

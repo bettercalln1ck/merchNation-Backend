@@ -7,6 +7,15 @@ const Users = require('../models/user')
 
 const merchRouter = express.Router();
 var authenticate = require('../authenticate');
+const stripe = require("stripe")("sk_test_51IO7TIK1JmW0iRErJG70YmZ68knfrleuuuEJ7tyYEUpTZN15Z1wXRPbmLdDpWlf8TxgUWF9u7m2vqWJ390OzdQM100xY19tz2c");
+const shortid = require('shortid');
+
+const Razorpay = require('razorpay')
+const razorpay = new Razorpay({
+    key_id: 'rzp_test_s6HVQD9M4O67YD',
+    key_secret: 'fJ1uvi5d41uNMBobhDJdNWes'
+})
+
 
 merchRouter.use(bodyParser.json());
 
@@ -16,12 +25,13 @@ merchRouter.route('/addMerch')
 .post(authenticate.verifyUser,authenticate.verifySeller, (req, res, next) => {
     if(req.body != null)
     {
+        req.body.seller=req.user._id;
         Merchs.create(req.body)
         .then((merch)=>{
             Merchs.findById(merch._id)
             .populate('seller')
             .then((merch) =>{
-            merch.seller=req.user._id;
+ //           merch.seller=req.user._id;
             res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.json({success:true,merch});
@@ -42,11 +52,66 @@ merchRouter.route('/addMerch')
     res.end('PUT operation not supported on /addMerch');	        
 });
 
+const calculateOrderAmount = items => {
+    // Replace this constant with a calculation of the order's amount
+    // Calculate the order total on the server to prevent
+    // people from directly manipulating the amount on the client
+    return 1400;
+  };
+
+
+/*merchRouter.post('/orders', async (req, res) => {
+    const options = {
+        amount: req.body.amount,
+        currency: 'INR',
+        receipt: shortid.generate(), //any unique id
+        payment_capture = 1 //optional
+    }
+    try {
+        const response = await razorpay.orders.create(options)
+        res.json({
+            order_id: response.id,
+            currency: response.currency,
+            amount: response.amount
+        })
+    } catch (error) {
+        console.log(error);
+        res.status(400).send('Unable to create order');
+    }
+})
+  
+merchRouter.post("/create-payment-intent", async (req, res) => {
+    const { items } = req.body;
+    // Create a PaymentIntent with the order amount and currency
+    paymentIntent = await stripe.paymentIntents.create({
+        amount: 1099,
+        currency: 'usd',
+        description: 'Software development services',
+      });
+
+     customer = await stripe.customers.create({
+        name: 'Jenny Rosen',
+        address: {
+          line1: '510 Townsend St',
+          postal_code: '98140',
+          city: 'San Francisco',
+          state: 'CA',
+          country: 'US',
+        }
+      });
+
+    res.send({
+      clientSecret: paymentIntent.client_secret
+    });
+  });
+  
+*/
+
 merchRouter.route('/:merchId')
 .options( (req, res) => {res.sendStatus(200); })
 .get(authenticate.verifyUser,authenticate.verifySeller,(req,res,next)=>{
     Merchs.findById(req.params.merchId)
-    .populate(users)
+    .populate('seller')
     .then((merch) =>{
         res.statusCode=200;
         res.setHeader('Content-Type','application/json');
@@ -54,21 +119,21 @@ merchRouter.route('/:merchId')
     },(err) => next(err))
     .catch((err) => next(err));
 })
-.post((req,res,next) => {
+.post(authenticate.verifyUser,(req,res,next) => {
     req.statusCode=403;
     res.end('POST operation not supported ');
 })
-.put((req,res,next)=>{
-    Merchs.findById(merchId)
-    .populate(seller)
+.put(authenticate.verifyUser,authenticate.verifySeller,(req,res,next)=>{
+    Merchs.findById(req.params.merchId)
+    .populate('seller')
     .then((merch)=>{
         if(merch!=null){
-            if(merch.seller.equals(req.user._id)){
+            if(!merch.seller.equals(req.user._id)){
                 var err = new Error('You are not authorized to update this merch info!');
                 err.status = 403;
                 return next(err);
             }
-            Merchs.findByIdAndUpdate(req.param.merchId,{
+            Merchs.findByIdAndUpdate(req.params.merchId,{
                 $set: req.body
             },{new:true})
             .then((merch)=>{
@@ -147,5 +212,136 @@ Merchs.findOneAndUpdate({_id:req.params.merchId,'category.variants':{$elemMatch:
     .catch((err) => next(err));
 
 });
+
+merchRouter.route('/:merchId/review')
+.options((req, res) => { res.sendStatus(200); })
+.get(authenticate.verifyUser, (req,res,next) => {
+    Merchs.findById(req.params.merchId)
+    .populate({
+        path: 'review',
+        populate:{path:'author'}
+    })
+    .then(() => {
+        Merchs.findById(req.params.merchId)
+        .populate('review.author')
+        .then((merch) =>{
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success:true, reviews:merch.review})
+    })
+    },(err) => next(err))
+    .catch((err) => next(err));
+})
+.post(authenticate.verifyUser, (req,res,next) => {
+    if(req.body != null){
+        req.body.author = req.user._id;
+        req.body.post = req.params.postId;
+        Merchs.findByIdAndUpdate(req.params.merchId,{
+            $push:{'review': req.body} 
+        },{new:true},function(err,result){
+             if(err){
+                 res.send(err);
+             }
+            res.statusCode=200;
+            res.setHeader('Content-Type','application/json');
+            res.json({success:true,result});
+        },(err) => next(err))
+        .catch((err) => next(err));
+    }
+    else{
+        err = new Error('Review not found in request body');
+        err.status = 404;
+        return next(err);
+    }
+})
+.put( authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('PUT operation not supported ');
+})
+.delete(authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('DELETE operation not supported ');
+});
+
+merchRouter.route('/:merchId/review/:ratingId')
+.options((req, res) => { res.sendStatus(200); })
+.get(authenticate.verifyUser, (req,res,next) => {
+    Merchs.findOne({_id:req.params.merchId,'review._id':req.params.ratingId})
+    .populate({
+        path: 'review',
+        populate:{path:'author'}
+    })
+    .then((rating) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success:true, rating})
+    },(err) => next(err))
+    .catch((err) => next(err));
+})
+.post( authenticate.verifyUser, (req, res, next) => {
+    res.statusCode = 403;
+    res.end('POST operation not supported on '+ req.params.merchId);
+})
+.put(authenticate.verifyUser, (req, res, next) => {
+    Merchs.findById(req.params.merchId)
+    .then((merch) => {
+        if(merch != null){
+            if(!comment.author.equals(req.user._id)){
+                var err = new Error('You are not authorized to update this comment!');
+                err.status = 403;
+                return next(err);
+            }
+            req.body.author = req.user._id;
+            Comments.findByIdAndUpdate(req.params.commentId, {
+                $set: req.body
+            }, {new : true})
+            .then((comment) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json({success:true})
+            }, (err) => next(err));
+        }
+        else {
+            err = new Error('Comment ' + req.params.commentId + ' not found!');
+            err.status = 404;
+            return next(err);            
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+.delete( authenticate.verifyUser, (req, res, next) => {
+    Comments.findById(req.params.commentId)
+    .then((comment) => {
+        if(comment != null){
+            if(!comment.author.equals(req.user._id)){
+                var err = new Error('You are not authorized to delete this post!');
+                err.status = 403;
+                return next(err);
+            }
+            Posts.findByIdAndUpdate(req.params.postId, {
+                $pull: {comments: req.params.commentId},
+                $inc: {commentcount: -1}
+            }, {new:true}, function(err, result) {
+                if(err){
+                    res.send(err);
+                }
+            });
+            Comments.findByIdAndRemove(req.params.commentId)
+            .then((comment) => {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.json({success:true})
+            }, (err) => next(err))
+        }
+        else{
+            err = new Error('Comment ' + req.params.commentId + ' not found!');
+            err.status = 404;
+            return next(err); 
+        }
+    }, (err) => next(err))
+    .catch((err) => next(err));
+});
+
+
 
 module.exports=merchRouter;

@@ -41,9 +41,12 @@ var User=new Schema({
 		type:Boolean,
 		default:false
 	},
-	userType:{
-		type:String,
-		default:''
+	sellerInfo:{
+		name: String,
+      logo: String,
+      description: String,
+      rating: { type: Number, default: 0, required: true },
+      numReviews: { type: Number, default: 0, required: true },
 	},
 	picture:{
 		type:String,
@@ -56,10 +59,6 @@ var User=new Schema({
 		}
 	},
 	cart:[{
-		type: mongoose.Schema.Types.ObjectId,
-        ref: 'Merch'
-	}],
-	wishList:[{
 		type: mongoose.Schema.Types.ObjectId,
         ref: 'Merch'
 	}],

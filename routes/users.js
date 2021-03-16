@@ -65,8 +65,6 @@ router.route('/profile')
             .then((user) => {
                 User.findById(req.user._id)
                 .then((user) => {
-
-
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
                     res.json({success:true,user}); 

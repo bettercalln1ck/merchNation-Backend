@@ -70,6 +70,10 @@ const merchSchema= new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    description:{
+        type: String,
+        reuired:true
+    },
     originalPrice:{
         type: Currency,
         required:true
