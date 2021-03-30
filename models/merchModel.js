@@ -56,7 +56,7 @@ var Category=new Schema({
         type:String,
         required:true
     },
-    colors:[Color],
+//    colors:[Color],
     variants:[Varient]
 })
 
@@ -72,7 +72,7 @@ const merchSchema= new Schema({
     },
     description:{
         type: String,
-        reuired:true
+        required:true
     },
     originalPrice:{
         type: Currency,
@@ -82,6 +82,9 @@ const merchSchema= new Schema({
         type: Float,
         required:true
     },
+    pictures:[{
+        type: String
+    }],
     category:Category,
     review:[Rating]
     },{

@@ -2,8 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
-const Merchs = require('../models/merch');
-const Users = require('../models/user')
+const Merchs = require('../models/merchModel');
+const Users = require('../models/userModel')
 
 const merchRouter = express.Router();
 var authenticate = require('../authenticate');
@@ -109,7 +109,7 @@ merchRouter.post("/create-payment-intent", async (req, res) => {
 
 merchRouter.route('/:merchId')
 .options( (req, res) => {res.sendStatus(200); })
-.get(authenticate.verifyUser,authenticate.verifySeller,(req,res,next)=>{
+.get(authenticate.verifyUser,(req,res,next)=>{
     Merchs.findById(req.params.merchId)
     .populate('seller')
     .then((merch) =>{
@@ -187,7 +187,39 @@ merchRouter.route('/:merchId/addVarients')
     .catch((err) => next(err));
 });
 
-merchRouter.route('/:merchId/buy')
+merchRouter.route('/:merchId/cart')
+.options( (req, res) => {res.sendStatus(200); })
+.get(authenticate.verifyUser,(req,res,next)=>{
+    Users.findById(req.params._id)
+    .then((user) =>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,cart:user.cart});
+    },(err) => next(err))
+    .catch((err) => next(err));
+})
+.post(authenticate.verifyUser,(req,res,next)=>{
+Merchs.findById(req.params.merchId)
+    .then((merch) =>{
+        Users.findByIdAndUpdate(req.user._id,{
+            $push:{cart:{'color':req.body.color,'size':req.body.size,'units':req.body.unitsInStock,'merch':req.params.merchId}
+        }},{new:true},function(err,user){
+            if(err){
+                res.send(err);
+            }
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,user});
+        });
+        
+    },(err) => next(err))
+    .catch((err) => next(err));
+
+});
+
+
+
+/*merchRouter.route('/:merchId/buy')
 .options( (req, res) => {res.sendStatus(200); })
 .post(authenticate.verifyUser,(req,res,next)=>{
 Merchs.findOneAndUpdate({_id:req.params.merchId,'category.variants':{$elemMatch:{
@@ -211,27 +243,10 @@ Merchs.findOneAndUpdate({_id:req.params.merchId,'category.variants':{$elemMatch:
     },(err) => next(err))
     .catch((err) => next(err));
 
-});
+});*/
 
 merchRouter.route('/:merchId/review')
 .options((req, res) => { res.sendStatus(200); })
-.get(authenticate.verifyUser, (req,res,next) => {
-    Merchs.findById(req.params.merchId)
-    .populate({
-        path: 'review',
-        populate:{path:'author'}
-    })
-    .then(() => {
-        Merchs.findById(req.params.merchId)
-        .populate('review.author')
-        .then((merch) =>{
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({success:true, reviews:merch.review})
-    })
-    },(err) => next(err))
-    .catch((err) => next(err));
-})
 .post(authenticate.verifyUser, (req,res,next) => {
     if(req.body != null){
         req.body.author = req.user._id;

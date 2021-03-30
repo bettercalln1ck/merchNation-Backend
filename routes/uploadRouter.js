@@ -1,8 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const authenticate = require('../authenticate');
-const Merchs = require('../models/merch');
-const Users = require('../models/user')
+const Merchs = require('../models/merchModel');
+const Users = require('../models/userModel')
 var path = require('path');
 
 
@@ -28,6 +28,27 @@ uploadRouter.route('/userImageUpload')
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.json({'imageUrl':req.file.location});
+        }, (err) => next(err))
+        .catch((err) => next(err));
+    })
+
+});
+
+uploadRouter.route('/merchImageUpload')
+.post(authenticate.verifyUser,function(req,res,next) {
+
+    singleUpload(req,res,(err) =>{
+        if(err) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.json({err: err});
+          }
+        Merchs.findByIdAndUpdate(req.user._id,{
+            $push:{'pictures':req.file.location}},{new:true})
+        .then((merch)=>{
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({'imageUrl':req.file.location,'merch':merch});
         }, (err) => next(err))
         .catch((err) => next(err));
     })

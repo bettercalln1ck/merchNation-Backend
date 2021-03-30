@@ -59,9 +59,15 @@ var User=new Schema({
 		}
 	},
 	cart:[{
-		type: mongoose.Schema.Types.ObjectId,
-        ref: 'Merch'
-	}],
+		merch:{type: mongoose.Schema.Types.ObjectId,ref: 'Merch',required: true},
+		color:{type:String,required:true},
+		size:{type:String,enum: ['L','XL'],required: true},
+		units:{type:Number ,required:true}
+		}],
+	order:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Order'
+    },	
 	pastOrders:[Product]
     },
     {

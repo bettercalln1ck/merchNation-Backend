@@ -1,6 +1,6 @@
 var express = require('express');
 const bodyParser=require('body-parser');
-var User=require('../models/user');
+var User=require('../models/userModel');
 var router = express.Router();
 var passport=require('passport');
 var authenticate=require('../authenticate');
@@ -47,6 +47,7 @@ router.route('/profile')
 .get(authenticate.verifyUser,(req, res, next)=> {
   User.findById(req.user._id)
   .populate('pastOrders.merch')
+  .populate('cart.merch')
   .then((user) =>{
       res.statusCode=200;
       res.setHeader('Content-Type', 'application/json');
@@ -79,6 +80,21 @@ router.route('/profile')
     }, (err) => next(err))
     .catch((err) => next(err));
 });
+
+router.route('/cart')
+.options((req, res) => { res.sendStatus(200); })
+.get(authenticate.verifyUser, (req,res,next) =>{
+  User.findById(req.user._id)
+    .populate('cart.merch')
+    .then((user) => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json({success:true,cart:user.cart}); 
+
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+
 
 router.post('/signup',(req, res, next) => {
   User.register(new User({username: req.body.username}), 

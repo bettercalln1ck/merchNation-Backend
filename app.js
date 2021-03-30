@@ -18,9 +18,10 @@ const url = config.mongoUrl;
 const connect = mongoose.connect(url);
 
 var indexRouter = require('./routes/index');
-var usersRouter = require('./routes/users');
-var merchRouter = require('./routes/merchs');
-var uploadRouter =require('./routes/uploadRouter')
+var usersRouter = require('./routes/userRouter');
+var merchRouter = require('./routes/merchRouter');
+var uploadRouter =require('./routes/uploadRouter');
+var orderRouter =require('./routes/orderRouter');
 
 var app = express();
 
@@ -56,7 +57,7 @@ app.use((req, res, next) => {
   next();
 }) 
 
-
+//app.use(express.json({ extended: false }));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -75,6 +76,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/merchs',merchRouter);
 app.use('/upload',uploadRouter);
+app.use('/order',orderRouter);
 
 
 function auth(req,res,next) {

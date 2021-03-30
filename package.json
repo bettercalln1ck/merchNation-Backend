@@ -3,9 +3,9 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-  "start": "node ./node_modules/pm2/bin/pm2 start ./bin/www --name merchNation --log ../logs/app.log ", 
-  "stop": "node ./node_modules/pm2/bin/pm2 stop merchNation", 
-  "build": "echo 'Building...'" 
+    "start": "nodemon ./bin/www  ",
+    "stop": "node ./node_modules/pm2/bin/pm2 stop merchNation",
+    "build": "echo 'Building...'"
   },
   "dependencies": {
     "aws-sdk": "^2.847.0",
