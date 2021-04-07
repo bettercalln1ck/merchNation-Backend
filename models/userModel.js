@@ -37,6 +37,12 @@ var User=new Schema({
 		type:Boolean,
 		default:false
 	},
+	adminInfo:{
+		name: String,
+		pictures:[{
+			type:String 
+		}]
+	},
 	seller:{
 		type:Boolean,
 		default:false
