@@ -14,7 +14,7 @@ const { getMaxListeners } = require('../models/userModel');
 router.get('/testMail' ,(req,res,next)=>{
   nodemailer.sendConfirmationEmail(
     "nikhil",
-    "bepogo6332@tlhao86.com",
+    "yegamo3406@zevars.com",
     123
   );
   res.json("send");
