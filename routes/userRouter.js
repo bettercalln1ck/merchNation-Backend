@@ -5,7 +5,20 @@ var router = express.Router();
 var passport=require('passport');
 var authenticate=require('../authenticate');
 var uniqueValidator = require('mongoose-unique-validator');
+var nodemailer = require('./services/nodemailer.config');
+const { route } = require('./uploadRouter');
+const { getMaxListeners } = require('../models/userModel');
 //const cors = require('./cors');
+
+
+router.get('/testMail' ,(req,res,next)=>{
+  nodemailer.sendConfirmationEmail(
+    "nikhil",
+    "bepogo6332@tlhao86.com",
+    123
+  );
+  res.json("send");
+})
 
 router.route('/verifyToken')
 .get(authenticate.verifyUser,(req, res, next)=> {
@@ -96,7 +109,7 @@ router.route('/cart')
 })
 
 
-router.post('/signup',(req, res, next) => {
+router.post('/signup',async (req, res, next) => {
   User.register(new User({username: req.body.username}), 
     req.body.password, (err, user) => {
     if(err) {
@@ -106,10 +119,22 @@ router.post('/signup',(req, res, next) => {
     }
     else {
       if (req.body.firstname)
-        user.firstname = req.body.firstname;
+        user.firstName = req.body.firstname;
       if (req.body.lastname)
-        user.lastname = req.body.lastname;
-      user.save((err, user) => {
+        user.lastName = req.body.lastname;
+      if (req.body.phonenumber)
+      user.phoneNumber = req.body.phonenumber;
+
+              const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+              let token = '';
+              for (let i = 0; i < 25; i++) {
+                    token += characters[Math.floor(Math.random() * characters.length )];
+                  }
+
+      user.confirmationCode=token; 
+
+
+       user.save((err, user) => {
         if (err) {
           res.statusCode = 500;
           res.setHeader('Content-Type', 'application/json');
@@ -117,15 +142,42 @@ router.post('/signup',(req, res, next) => {
           return ;
         }
 
+           
+
+          nodemailer.sendConfirmationEmail(
+            user.firstName,
+            req.body.username,
+            user.confirmationCode
+          );
+
+
         passport.authenticate('local')(req, res, () => {
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
-          res.json({success: true,status: 'Registration Successful!'});
+          res.json({success: true,user,status: 'User was registered successfully! Please check your email'});
         });
+
+     
       });
     }
   });
 });
+
+router.get('/confirm/:confirmationCode',(req,res,next) => {
+  User.find({confirmationCode : req.params.confirmationCode})
+  .then((user) => {
+  if(user.confirmationCode == req.params.confirmationCode){
+    user.status = 'Active';
+    res.json({success:true , user: user})
+  }else{
+    err = new Error('Invalid URL');
+    err.status = 404;
+    return next(err); 
+  }
+} , (err) => next(err))
+  .catch((err) => next(err));;
+});
+
 
 router.post('/login',(req,res,next) =>{
       passport.authenticate('local')(req,res,() =>{

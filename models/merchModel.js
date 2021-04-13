@@ -82,7 +82,7 @@ const merchSchema= new Schema({
         type: Float,
         required:true
     },
-    pictures:[{
+    images:[{
         type: String
     }],
     category:Category,

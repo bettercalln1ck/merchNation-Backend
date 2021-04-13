@@ -59,4 +59,13 @@ exports.verifySeller=(req,res,next)=>{
 		}
 }
 
+exports.verifyConfirmation = (req, res, next) => {
 
+	if(req.user.status == 'Active'){
+		next();
+	}else{
+		var err=new Error('You email if not confirmed');
+		err.status=403;
+		next(err);
+	}
+  };

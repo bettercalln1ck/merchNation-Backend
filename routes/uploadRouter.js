@@ -67,7 +67,7 @@ uploadRouter.route('/:merchId/merchImageUpload')
             res.json({err: err});
           }
         Merchs.findByIdAndUpdate(req.params.merchId,{
-            $push:{'pictures':req.file.location}},{new:true})
+            $push:{'images':req.file.location}},{new:true})
         .then((merch)=>{
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');

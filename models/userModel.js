@@ -43,6 +43,18 @@ var User=new Schema({
 			type:String 
 		}]
 	},
+	phoneNumber:{
+		type: Number,
+	},
+	confirmationCode:{
+		type:String,
+		default:''
+	},
+	status: {
+		type: String, 
+		enum: ['Pending', 'Active'],
+		default: 'Pending'
+	  },
 	seller:{
 		type:Boolean,
 		default:false
@@ -51,6 +63,7 @@ var User=new Schema({
 		name: String,
       logo: String,
       description: String,
+	  address: String,
       rating: { type: Number, default: 0, required: true },
       numReviews: { type: Number, default: 0, required: true },
 	},
