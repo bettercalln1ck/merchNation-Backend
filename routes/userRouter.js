@@ -164,16 +164,24 @@ router.post('/signup',async (req, res, next) => {
 });
 
 router.get('/confirm/:confirmationCode',(req,res,next) => {
-  User.find({confirmationCode : req.params.confirmationCode})
+  User.findOneAndUpdate({confirmationCode : req.params.confirmationCode},
+   { status :'Active'})
   .then((user) => {
-  if(user.confirmationCode == req.params.confirmationCode){
+    console.log(user);
     user.status = 'Active';
-    res.json({success:true , user: user})
-  }else{
-    err = new Error('Invalid URL');
-    err.status = 404;
-    return next(err); 
-  }
+    
+    user.save((err, user) => {
+      if (err) {
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({err});
+        return ;
+      }
+      res.statusCode = 200;
+      res.setHeader('Content-Type', 'application/json');
+      res.json({success:true , user: user})
+    });
+
 } , (err) => next(err))
   .catch((err) => next(err));;
 });
