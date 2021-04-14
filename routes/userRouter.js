@@ -142,19 +142,23 @@ router.post('/signup',async (req, res, next) => {
           return ;
         }
 
+        var err ;
            
-
+          try{
           nodemailer.sendConfirmationEmail(
             user.firstName,
             req.body.username,
             user.confirmationCode
           );
+          }catch (error){
+              err =error
+          }
 
 
         passport.authenticate('local')(req, res, () => {
           res.statusCode = 200;
           res.setHeader('Content-Type', 'application/json');
-          res.json({success: true,user,status: 'User was registered successfully! Please check your email'});
+          res.json({success: true,user,status: 'User was registered successfully! Please check your email',error: err});
         });
 
      

@@ -109,13 +109,28 @@ merchRouter.post("/create-payment-intent", async (req, res) => {
 
 merchRouter.route('/:merchId')
 .options( (req, res) => {res.sendStatus(200); })
-.get(authenticate.verifyUser,(req,res,next)=>{
+.get(authenticate.verifyUser,async (req,res,next)=>{
     Merchs.findById(req.params.merchId)
     .populate('seller')
-    .then((merch) =>{
+    .then(async (merch) =>{
+        var variants = merch.category.variants;
+        var mp = new Map();
+       await Promise.all(
+           variants.map(async (item,) =>{
+            const key = item.color;
+            const data = {size : item.size,unitsInStock : item.unitsInStock}
+            const collection = await mp.get(key);
+            if (!collection) {
+                await mp.set(key, [data]);
+            } else {
+                await collection.push(data);
+            }
+
+        }))
+        const arr = Array.from(mp)
         res.statusCode=200;
         res.setHeader('Content-Type','application/json');
-        res.json({success:true,merch});
+        res.json({success:true,  merch , variants : arr });
     },(err) => next(err))
     .catch((err) => next(err));
 })
