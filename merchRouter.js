@@ -109,28 +109,13 @@ merchRouter.post("/create-payment-intent", async (req, res) => {
 
 merchRouter.route('/:merchId')
 .options( (req, res) => {res.sendStatus(200); })
-.get(authenticate.verifyUser,async (req,res,next)=>{
+.get(authenticate.verifyUser,(req,res,next)=>{
     Merchs.findById(req.params.merchId)
     .populate('seller')
-    .then(async (merch) =>{
-        var variants = merch.category.variants;
-        var mp = new Map();
-       await Promise.all(
-           variants.map(async (item,) =>{
-            const key = item.color;
-            const data = {size : item.size,unitsInStock : item.unitsInStock}
-            const collection = await mp.get(key);
-            if (!collection) {
-                await mp.set(key, [data]);
-            } else {
-                await collection.push(data);
-            }
-
-        }))
-        const arr = Array.from(mp)
+    .then((merch) =>{
         res.statusCode=200;
         res.setHeader('Content-Type','application/json');
-        res.json({success:true,  merch , variants : arr });
+        res.json({success:true,merch});
     },(err) => next(err))
     .catch((err) => next(err));
 })
@@ -200,25 +185,7 @@ merchRouter.route('/:merchId/addVarients')
         res.json({success:true,result});
     },(err) => next(err))
     .catch((err) => next(err));
-})
-
-merchRouter.route('/:merchId/addVarientsImages')
-.options( (req, res) => {res.sendStatus(200); })
-.post(authenticate.verifyUser,authenticate.verifySeller,(req,res,next)=>{
-    Merchs.findByIdAndUpdate(req.params.merchId,{
-        $set:{'category.variants': req.body} 
-    },{new:true},function(err,result){
-         if(err){
-             res.send(err);
-         }
-        res.statusCode=200;
-        res.setHeader('Content-Type','application/json');
-        res.json({success:true,result});
-    },(err) => next(err))
-    .catch((err) => next(err));
-})
-
-
+});
 
 merchRouter.route('/:merchId/cart')
 .options( (req, res) => {res.sendStatus(200); })
@@ -242,7 +209,7 @@ Merchs.findById(req.params.merchId)
             }
         res.statusCode=200;
         res.setHeader('Content-Type','application/json');
-        res.json({success:true,user});
+        res.json({sucpicturescess:true,user});
         });
         
     },(err) => next(err))

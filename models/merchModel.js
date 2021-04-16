@@ -30,7 +30,10 @@ var Color=new Schema({
     code:{
         type:String,
         required:true
-    }
+    },
+    images:[{
+        type:String
+    }]
 })
 
 var Varient=new Schema({
@@ -82,9 +85,7 @@ const merchSchema= new Schema({
         type: Float,
         required:true
     },
-    images:[{
-        type: String
-    }],
+    images:[Color],
     category:Category,
     review:[Rating]
     },{
