@@ -66,14 +66,32 @@ uploadRouter.route('/:merchId/merchImageUpload')
             res.setHeader('Content-Type', 'application/json');
             res.json({err: err});
           }
-        Merchs.findByIdAndUpdate(req.params.merchId,{
-            $push:{'images':req.file.location}},{new:true})
-        .then((merch)=>{
-        res.statusCode = 200;
-        res.setHeader('Content-Type', 'application/json');
-        res.json({'imageUrl':req.file.location,'merch':merch});
-        }, (err) => next(err))
-        .catch((err) => next(err));
+          erchs.findOneAndUpdate(
+            {
+                _id:req.params.merchId,
+                "category.variants":{
+                    $elemMatch :{
+                    "color": req.body.color
+                }
+            }},
+            { $set: {
+                        "category.variants.$[outer].stock":req.body.stock
+                    }
+            },
+            {
+                "arrayFilters": [
+                    { "outer.color": req.body.color },
+                ]  
+            }
+        ).then((result,err) =>{
+            if (err) {
+                console.log('Error updating service: ' + err);
+                res.send({'error':'An error has occurred'});
+            } else {
+                // console.log('' + result + ' document(s) updated');
+                res.send(result);
+            }
+        })
     })
 
 });

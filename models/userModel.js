@@ -27,7 +27,9 @@ var Product=new Schema({
 var User=new Schema({
 	firstName:{
 		type:String,
-		default:''
+		default:'',
+		required: true,
+		immutable: true
 	},
 	lastName:{
 		type:String,
@@ -37,14 +39,10 @@ var User=new Schema({
 		type:Boolean,
 		default:false
 	},
-	adminInfo:{
-		name: String,
-		pictures:[{
-			type:String 
-		}]
-	},
 	phoneNumber:{
 		type: Number,
+		required: true,
+		unique: true
 	},
 	confirmationCode:{
 		type:String,
@@ -55,18 +53,6 @@ var User=new Schema({
 		enum: ['Pending', 'Active'],
 		default: 'Pending'
 	  },
-	seller:{
-		type:Boolean,
-		default:false
-	},
-	sellerInfo:{
-		name: String,
-      logo: String,
-      description: String,
-	  address: String,
-      rating: { type: Number, default: 0, required: true },
-      numReviews: { type: Number, default: 0, required: true },
-	},
 	picture:{
 		type:String,
 		default:''

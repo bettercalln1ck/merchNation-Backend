@@ -22,14 +22,13 @@ merchRouter.use(bodyParser.json());
 
 merchRouter.route('/addMerch')
 .options( (req, res) => {res.sendStatus(200); })
-.post(authenticate.verifyUser,authenticate.verifySeller, (req, res, next) => {
+.post(authenticate.verifyUser,authenticate.verifyAdmin, (req, res, next) => {
     if(req.body != null)
     {
         req.body.seller=req.user._id;
         Merchs.create(req.body)
         .then((merch)=>{
             Merchs.findById(merch._id)
-            .populate('seller')
             .then((merch) =>{
  //           merch.seller=req.user._id;
             res.statusCode = 200;
@@ -138,7 +137,7 @@ merchRouter.route('/:merchId')
     req.statusCode=403;
     res.end('POST operation not supported ');
 })
-.put(authenticate.verifyUser,authenticate.verifySeller,(req,res,next)=>{
+.put(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
     Merchs.findById(req.params.merchId)
     .populate('seller')
     .then((merch)=>{
@@ -165,7 +164,7 @@ merchRouter.route('/:merchId')
     ,(err) => next(err))
     .catch((err) =>next(err));
 })
-.delete(authenticate.verifyUser,authenticate.verifySeller, (req,res,next) => {
+.delete(authenticate.verifyUser,authenticate.verifyAdmin, (req,res,next) => {
     Merchs.findById(req.params.merchId)
     .then((merch) => {
         if (merch != null) {
@@ -186,25 +185,79 @@ merchRouter.route('/:merchId')
     .catch((err) => next(err));
 });
 
-merchRouter.route('/:merchId/addVarients')
+merchRouter.route('/:merchId/variants')
 .options( (req, res) => {res.sendStatus(200); })
-.post(authenticate.verifyUser,authenticate.verifySeller,(req,res,next)=>{
-    Merchs.findByIdAndUpdate(req.params.merchId,{
-        $push:{'category.variants': req.body} 
-    },{new:true},function(err,result){
-         if(err){
-             res.send(err);
+.post(authenticate.verifyUser,authenticate.verifyAdmin,async(req,res,next)=>{
+
+    // Merchs.findByIdAndUpdate(req.params.merchId,{
+    //     $addToSet:{'category.variants': req.body} 
+    // },{new:true},function(err,result){
+    //      if(err){
+    //          res.send(err);
+    //      }
+    //     res.statusCode=200;
+    //     res.setHeader('Content-Type','application/json');
+    //     res.json({success:true,result});
+    // },(err) => next(err))
+    // .catch((err) => next(err));
+
+    await Merchs.findOneAndUpdate(
+        {
+            _id:req.params.merchId,
+             "category.variants.color":{
+                 $ne : req.body.color
          }
-        res.statusCode=200;
+    },
+        { $addToSet: {
+                    "category.variants":req.body
+                }
+        },
+        {new:true}
+    ).then((result) =>{
+            res.statusCode=200;
         res.setHeader('Content-Type','application/json');
         res.json({success:true,result});
+        
     },(err) => next(err))
     .catch((err) => next(err));
+
+
 })
+.put(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
+    Merchs.findOneAndUpdate(
+        {
+            _id:req.params.merchId,
+            "category.variants":{
+                $elemMatch :{
+                "color": req.body.color
+            }
+        }},
+        { $set: {
+                    "category.variants.$[outer].stock":req.body.stock
+                }
+        },
+        {
+            "arrayFilters": [
+                { "outer.color": req.body.color },
+            ]  
+        }
+    ).then((result,err) =>{
+        if (err) {
+            console.log('Error updating service: ' + err);
+            res.send({'error':'An error has occurred'});
+        } else {
+            res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,result});
+        }
+    },(err) => next(err))
+    .catch((err) => next(err));
+});
+
 
 merchRouter.route('/:merchId/addVarientsImages')
 .options( (req, res) => {res.sendStatus(200); })
-.post(authenticate.verifyUser,authenticate.verifySeller,(req,res,next)=>{
+.post(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
     Merchs.findByIdAndUpdate(req.params.merchId,{
         $set:{'category.variants': req.body} 
     },{new:true},function(err,result){
@@ -235,7 +288,7 @@ merchRouter.route('/:merchId/cart')
 Merchs.findById(req.params.merchId)
     .then((merch) =>{
         Users.findByIdAndUpdate(req.user._id,{
-            $push:{cart:{'color':req.body.color,'size':req.body.size,'units':req.body.unitsInStock,'merch':req.params.merchId}
+            $push:{cart:{'color':req.body.color,'size':req.body.size,'units':req.body.units,'merch':req.params.merchId}
         }},{new:true},function(err,user){
             if(err){
                 res.send(err);

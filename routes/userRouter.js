@@ -33,17 +33,17 @@ router.route('/verifyToken')
   .catch((err) => next(err));
 });
 
-router.route('/becomeSeller')
-.get(authenticate.verifyUser,(req, res, next)=> {
-  User.findByIdAndUpdate(req.user._id,{
-    $set: {"seller":"true"} },{new: true})
-	.then((user) =>{
-	res.statusCode=200;
-	res.setHeader('Content-Type','application/json');
-	res.json(user);
-	},(err) =>next(err))
-	.catch((err) => next(err));
-});
+// router.route('/becomeSeller')
+// .get(authenticate.verifyUser,(req, res, next)=> {
+//   User.findByIdAndUpdate(req.user._id,{
+//     $set: {"seller":"true"} },{new: true})
+// 	.then((user) =>{
+// 	res.statusCode=200;
+// 	res.setHeader('Content-Type','application/json');
+// 	res.json(user);
+// 	},(err) =>next(err))
+// 	.catch((err) => next(err));
+// });
 
 router.route('/')
 .get(authenticate.verifyUser,authenticate.verifyAdmin,(req, res, next)=> {
@@ -108,9 +108,36 @@ router.route('/cart')
     .catch((err) => next(err));
 })
 
+router.route('/makeAdmin')
+.options((req, res) => { res.sendStatus(200); })
+.get(authenticate.verifyUser, (req,res,next) =>{
+  User.findByIdAndUpdate(req.user._id,{admin:true})
+    .then((user) => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json({success:true,user:user}); 
+
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+
+router.route('/pastOrders')
+.options((req, res) => { res.sendStatus(200); })
+.get(authenticate.verifyUser, (req,res,next) =>{
+  User.findById(req.user._id)
+    .populate('pastOrders.merch')
+    .then((user) => {
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.json({success:true,pastOrders: pastOrders.product}); 
+
+    }, (err) => next(err))
+    .catch((err) => next(err));
+})
+
 
 router.post('/signup',async (req, res, next) => {
-  User.register(new User({username: req.body.username}), 
+  User.register(new User({username: req.body.username,firstName: req.body.firstName,phoneNumber : req.body.phoneNumber}), 
     req.body.password, (err, user) => {
     if(err) {
       res.statusCode = 500;
@@ -118,12 +145,8 @@ router.post('/signup',async (req, res, next) => {
       res.json({err: err});
     }
     else {
-      if (req.body.firstname)
-        user.firstName = req.body.firstname;
-      if (req.body.lastname)
-        user.lastName = req.body.lastname;
-      if (req.body.phonenumber)
-      user.phoneNumber = req.body.phonenumber;
+      if (req.body.lastName)
+        user.lastName = req.body.lastName;
 
               const characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
               let token = '';
@@ -183,7 +206,7 @@ router.get('/confirm/:confirmationCode',(req,res,next) => {
       }
       res.statusCode = 200;
       res.setHeader('Content-Type', 'application/json');
-      res.json({success:true , user: user})
+      res.json({success:true , status: "Your account has been confirmed"})
     });
 
 } , (err) => next(err))

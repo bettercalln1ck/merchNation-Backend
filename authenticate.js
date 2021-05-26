@@ -49,15 +49,15 @@ exports.verifyAdmin=(req,res,next)=>{
 	}
 };
 
-exports.verifySeller=(req,res,next)=>{
-	if(req.user.seller){
-		next();
-		} else{
-		var err=new Error('You are not seller');
-		err.status=403;
-		next(err);
-		}
-}
+// exports.verifySeller=(req,res,next)=>{
+// 	if(req.user.seller){
+// 		next();
+// 		} else{
+// 		var err=new Error('You are not seller');
+// 		err.status=403;
+// 		next(err);
+// 		}
+// }
 
 exports.verifyConfirmation = (req, res, next) => {
 
