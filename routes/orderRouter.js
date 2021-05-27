@@ -34,7 +34,7 @@ orderRouter.route('/')
         var merchs=[]
         totalPrice =0;
         for(i=0;i<req.body.orderItems.length;i++){
-            await Merchs.findById(req.body.orderItems[i].mrch)
+            await Merchs.findById(req.body.orderItems[i].merch)
             .then((merch)=>{
                 let obj= {
                     "merch": merch,

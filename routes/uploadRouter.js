@@ -75,7 +75,7 @@ uploadRouter.route('/:merchId/merchImageUpload')
                 }
             }},
             { $set: {
-                        "category.variants.$[outer].stock":req.body.stock
+                        "category.variants.$[outer].images":req.body.images
                     }
             },
             {
