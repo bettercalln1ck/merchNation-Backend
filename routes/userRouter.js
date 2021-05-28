@@ -56,6 +56,19 @@ router.route('/')
 	.catch((err) => next(err));
 });
 
+router.get('/auth/google', 
+  passport.authenticate('google', { scope : ['profile', 'email'] }));
+ 
+router.get('/auth/google/callback', 
+  passport.authenticate('google', { failureMessage: 'Cannot login to Google, please try again later' }),
+  function(req, res) {
+      var token=authenticate.getToken({_id:req.user._id});
+			res.statusCode=200;		
+			res.setHeader('Content-Type','application/json');
+			res.json({success: true,userId:req.user._id,token:token,status:'You are successfully login!'});
+  });
+
+
 router.route('/profile')
 .get(authenticate.verifyUser,(req, res, next)=> {
   User.findById(req.user._id)

@@ -35,6 +35,10 @@ var User=new Schema({
 		type:String,
 		default:''
 	},
+	googleId:{
+		type:String,
+		default: ''
+	},
 	admin:{
 		type:Boolean,
 		default:false
