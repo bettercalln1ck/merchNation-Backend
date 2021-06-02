@@ -56,7 +56,8 @@ var Varient=new Schema({
     stock:[{
         size:{
             type:String,
-            required: true
+            required: true,
+            unique: true
         },
         unitsInStock:{
             type:Number,

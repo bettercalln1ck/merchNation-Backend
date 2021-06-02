@@ -110,26 +110,25 @@ merchRouter.route('/:merchId')
 .options( (req, res) => {res.sendStatus(200); })
 .get(authenticate.verifyUser,async (req,res,next)=>{
     Merchs.findById(req.params.merchId)
-    .populate('seller')
     .then(async (merch) =>{
-        var variants = merch.category.variants;
-        var mp = new Map();
-       await Promise.all(
-           variants.map(async (item,) =>{
-            const key = item.color;
-            const data = {size : item.size,unitsInStock : item.unitsInStock}
-            const collection = await mp.get(key);
-            if (!collection) {
-                await mp.set(key, [data]);
-            } else {
-                await collection.push(data);
-            }
+    //     var variants = merch.category.variants;
+    //     var mp = new Map();
+    //    await Promise.all(
+    //        variants.map(async (item,) =>{
+    //         const key = item.color;
+    //         const data = {size : item.size,unitsInStock : item.unitsInStock}
+    //         const collection = await mp.get(key);
+    //         if (!collection) {
+    //             await mp.set(key, [data]);
+    //         } else {
+    //             await collection.push(data);
+    //         }
 
-        }))
-        const arr = Array.from(mp)
+    //     }))
+      //  const arr = Array.from(mp)
         res.statusCode=200;
         res.setHeader('Content-Type','application/json');
-        res.json({success:true,  merch , variants : arr });
+        res.json({success:true,  merch });
     },(err) => next(err))
     .catch((err) => next(err));
 })
@@ -138,15 +137,14 @@ merchRouter.route('/:merchId')
     res.end('POST operation not supported ');
 })
 .put(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
-    Merchs.findById(req.params.merchId)
-    .populate('seller')
-    .then((merch)=>{
-        if(merch!=null){
-            if(!merch.seller.equals(req.user._id)){
-                var err = new Error('You are not authorized to update this merch info!');
-                err.status = 403;
-                return next(err);
-            }
+    // Merchs.findById(req.params.merchId)
+    // .then((merch)=>{
+    //     if(merch!=null){
+    //         if(!merch.seller.equals(req.user._id)){
+    //             var err = new Error('You are not authorized to update this merch info!');
+    //             err.status = 403;
+    //             return next(err);
+    //         }
             Merchs.findByIdAndUpdate(req.params.merchId,{
                 $set: req.body
             },{new:true})
@@ -154,13 +152,13 @@ merchRouter.route('/:merchId')
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
                     res.json({success:true,merch}); 
-            })
-        }else{
-            err= new Error('Merch' +req.params.merchId +'not found');
-            err.status =404;
-            return next(err);
-        }
-    }
+            }
+    //     }else{
+    //         err= new Error('Merch' +req.params.merchId +'not found');
+    //         err.status =404;
+    //         return next(err);
+    //     }
+    // }
     ,(err) => next(err))
     .catch((err) =>next(err));
 })
@@ -187,6 +185,15 @@ merchRouter.route('/:merchId')
 
 merchRouter.route('/:merchId/variants')
 .options( (req, res) => {res.sendStatus(200); })
+.get(authenticate.verifyUser,async(req,res,next)=>{
+    Merchs.findById(req.params.merchId)
+    .then((merch)=>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,merch});
+    },(err) => next(err))
+    .catch((err) => next(err));
+})
 .post(authenticate.verifyUser,authenticate.verifyAdmin,async(req,res,next)=>{
 
     // Merchs.findByIdAndUpdate(req.params.merchId,{
@@ -232,14 +239,16 @@ merchRouter.route('/:merchId/variants')
                 "color": req.body.color
             }
         }},
-        { $set: {
-                    "category.variants.$[outer].stock":req.body.stock
+        { $addToSet: {
+                    "category.variants.$[outer].stock":{ $each : req.body.stock}
                 }
         },
         {
             "arrayFilters": [
                 { "outer.color": req.body.color },
-            ]  
+            ],
+            upsert: false,
+            new: true  
         }
     ).then((result,err) =>{
         if (err) {
