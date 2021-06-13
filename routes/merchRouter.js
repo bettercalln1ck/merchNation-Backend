@@ -145,9 +145,9 @@ merchRouter.route('/:merchId')
     //             err.status = 403;
     //             return next(err);
     //         }
-            Merchs.findByIdAndUpdate(req.params.merchId,{
-                $set: req.body
-            },{new:true})
+            Merchs.findByIdAndUpdate(req.params.merchId,
+                 req.body
+            ,{new:true})
             .then((merch)=>{
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
@@ -231,36 +231,69 @@ merchRouter.route('/:merchId/variants')
 
 })
 .put(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
-    Merchs.findOneAndUpdate(
-        {
-            _id:req.params.merchId,
-            "category.variants":{
-                $elemMatch :{
-                "color": req.body.color
-            }
-        }},
-        { $addToSet: {
-                    "category.variants.$[outer].stock":{ $each : req.body.stock}
-                }
-        },
-        {
-            "arrayFilters": [
-                { "outer.color": req.body.color },
-            ],
-            upsert: false,
-            new: true  
-        }
-    ).then((result,err) =>{
-        if (err) {
-            console.log('Error updating service: ' + err);
-            res.send({'error':'An error has occurred'});
-        } else {
-            res.statusCode=200;
+    Merchs.findById(req.params.merchId)
+    .then(async (merch) =>{
+        //console.log(merch);
+        colorIndex = await merch.category.variants.findIndex(obj =>obj.color == req.body.color);
+        if(colorIndex  == -1 ){
+                res.statusCode=404;
         res.setHeader('Content-Type','application/json');
-        res.json({success:true,result});
+         res.json({err : "Color does not exist"});
         }
+        console.log(colorIndex);
+        await Promise.all(req.body.stock.map(async (element)=>{
+            stockIndex = await merch.category.variants[colorIndex].stock.findIndex(obj => obj.size == element.size );
+            console.log(merch.category.variants[colorIndex].stock[stockIndex]);
+            if(stockIndex == -1){
+                merch.category.variants[colorIndex].stock.push(element);
+            }else{
+                merch.category.variants[colorIndex].stock[stockIndex].unitsInStock = element.unitsInStock;
+            }
+        })) 
+
+        merch.save((err,result)=>{
+            if (err) {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.json({err});
+                return ;
+            }
+                res.statusCode=200;
+                res.setHeader('Content-Type','application/json');
+                res.json({success:true,result});             
+        })
     },(err) => next(err))
     .catch((err) => next(err));
+    // Merchs.findOneAndUpdate(
+    //     {
+    //         _id:req.params.merchId,
+    //         "category.variants":{
+    //             $elemMatch :{
+    //             "color": req.body.color
+    //         }
+    //     }},
+    //     { $set: {
+    //                 "category.variants.$[outer].stock": req.body.stock
+    //             }
+    //     },
+    //     {
+    //         "arrayFilters": [
+    //             { "outer.color": req.body.color },
+    //         ],
+    //         upsert: false,
+    //         new: true  
+    //     }
+    // ).then((result,err) =>{
+    //     if (err) {
+    //         console.log('Error updating service: ' + err);
+    //         res.send({'error':'An error has occurred'});
+    //     } else {
+    //         res.statusCode=200;
+    //     res.setHeader('Content-Type','application/json');
+    //     res.json({success:true,result});
+    //     }
+    // },(err) => next(err))
+    // .catch((err) => next(err));
 });
 
 
@@ -280,7 +313,21 @@ merchRouter.route('/:merchId/addVarientsImages')
     .catch((err) => next(err));
 })
 
-
+merchRouter.route(':/merchId/setVisibility')
+.options( (req, res) => {res.sendStatus(200); })
+.post(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
+    Merchs.findByIdAndUpdate(req.params.merchId,{
+       $set:{'visibility' : req.params.visibility} 
+    },{new:true},function(err,result){
+        if(err){
+            res.send(err);
+        }
+       res.statusCode=200;
+       res.setHeader('Content-Type','application/json');
+       res.json({success:true,result});
+   },(err) => next(err))
+   .catch((err) => next(err));
+});
 
 merchRouter.route('/:merchId/cart')
 .options( (req, res) => {res.sendStatus(200); })

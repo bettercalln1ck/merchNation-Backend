@@ -57,7 +57,6 @@ var Varient=new Schema({
         size:{
             type:String,
             required: true,
-            unique: true
         },
         unitsInStock:{
             type:Number,
@@ -112,6 +111,10 @@ const merchSchema= new Schema({
         es_indexed:true
     },
     category:Category,
+    visibility:{ 
+        type: Boolean,
+        default: false
+    },
     tag:[{
         type:String,
         es_indexed:true
