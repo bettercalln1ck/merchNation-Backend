@@ -22,7 +22,7 @@ merchRouter.use(bodyParser.json());
 
 merchRouter.route('/addMerch')
 .options( (req, res) => {res.sendStatus(200); })
-.post(authenticate.verifyUser,authenticate.verifyAdmin, (req, res, next) => {
+.post(authenticate.verifyUser, (req, res, next) => {
     if(req.body != null)
     {
         req.body.seller=req.user._id;
@@ -170,7 +170,8 @@ merchRouter.route('/:merchId')
             .then((resp) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.json({success:true,resp}); 
+                res.json({success:true,resp
+                }); 
             }, (err) => next(err))
             .catch((err) => next(err));
         }
