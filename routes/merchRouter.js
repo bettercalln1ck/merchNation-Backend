@@ -22,7 +22,7 @@ merchRouter.use(bodyParser.json());
 
 merchRouter.route('/addMerch')
 .options( (req, res) => {res.sendStatus(200); })
-.post(authenticate.verifyUser, (req, res, next) => {
+.post(authenticate.verifyUser,authenticate.verifyAdmin, (req, res, next) => {
     if(req.body != null)
     {
         req.body.seller=req.user._id;
@@ -35,7 +35,8 @@ merchRouter.route('/addMerch')
                 res.setHeader('Content-Type', 'application/json');
                 res.json({success:true,merch});
             })
-        })
+        },(err) => next(err))
+        .catch((err) => next(err));
     }else{
         err = new Error('Merch info not found in request body');
         err.status = 404;
