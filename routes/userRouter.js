@@ -111,7 +111,6 @@ router.route('/cart')
 .options((req, res) => { res.sendStatus(200); })
 .get(authenticate.verifyUser, (req,res,next) =>{
   User.findById(req.user._id)
-    .populate('cart.merch')
     .then((user) => {
                     res.statusCode = 200;
                     res.setHeader('Content-Type', 'application/json');
@@ -119,7 +118,47 @@ router.route('/cart')
 
     }, (err) => next(err))
     .catch((err) => next(err));
+});
+
+router.route('/cart/:cartItemId')
+.options( (req, res) => {res.sendStatus(200); })
+.get(authenticate.verifyUser,(req,res,next)=>{
+    User.findById(req.user._id)
+//    .populate('cart.merch')
+    .then((user) =>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,cart:user.cart});
+    },(err) => next(err))
+    .catch((err) => next(err));
 })
+.put(authenticate.verifyUser,(req,res,next)=>{
+
+    const update = {$set:{'cart.$[cartItem].color':req.body.color,'cart.$[cartItem].size':req.body.size,'cart.$[cartItem].units':req.body.units}}
+    const options = {arrayFilters :[{'cartItem._id':req.params.cartItemId}],new:true};
+    User.findByIdAndUpdate(req.user._id,
+    update,options,function(err,user){
+        if(err){
+            res.send(err);
+        }
+    res.statusCode=200;
+    res.setHeader('Content-Type','application/json');
+    res.json({success:true,cart:user.cart});
+    });
+})
+.delete(authenticate.verifyUser,(req,res,next)=>{
+    const update = {$pull:{'cart':{'_id' :req.params.cartItemId}}}
+    User.findByIdAndUpdate(req.user._id,
+    update,{new:true})
+    .then((user) =>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,cart:user.cart});
+    },(err) => next(err))
+    .catch((err) => next(err));
+})
+
+
 
 router.route('/makeAdmin')
 .options((req, res) => { res.sendStatus(200); })
@@ -226,7 +265,6 @@ router.get('/confirm/:confirmationCode',(req,res,next) => {
   .catch((err) => next(err));;
 });
 
-
 router.post('/login',(req,res,next) =>{
       passport.authenticate('local')(req,res,() =>{
 			var token=authenticate.getToken({_id:req.user._id});
@@ -235,7 +273,6 @@ router.post('/login',(req,res,next) =>{
 			res.json({success: true,userId:req.user._id,token:token,status:'You are successfully login!'});
     });
 });
-
 
 router.get('/logout',(req,res) =>{
 	if(req.session){

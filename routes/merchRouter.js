@@ -19,6 +19,18 @@ const razorpay = new Razorpay({
 
 merchRouter.use(bodyParser.json());
 
+merchRouter.route('/')
+.options( (req, res) => {res.sendStatus(200); })
+.get(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next) =>{
+    Merchs.find({})
+    .then((merch) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success:true,merch});
+},(err) => next(err))
+.catch((err) => next(err));
+
+});
 
 merchRouter.route('/addMerch')
 .options( (req, res) => {res.sendStatus(200); })
@@ -299,27 +311,27 @@ merchRouter.route('/:merchId/variants')
 });
 
 
-merchRouter.route('/:merchId/addVarientsImages')
-.options( (req, res) => {res.sendStatus(200); })
-.post(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
-    Merchs.findByIdAndUpdate(req.params.merchId,{
-        $set:{'category.variants': req.body} 
-    },{new:true},function(err,result){
-         if(err){
-             res.send(err);
-         }
-        res.statusCode=200;
-        res.setHeader('Content-Type','application/json');
-        res.json({success:true,result});
-    },(err) => next(err))
-    .catch((err) => next(err));
-})
+// merchRouter.route('/:merchId/addVarientsImages')
+// .options( (req, res) => {res.sendStatus(200); })
+// .post(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
+//     Merchs.findByIdAndUpdate(req.params.merchId,{
+//         $set:{'category.variants': req.body} 
+//     },{new:true},function(err,result){
+//          if(err){
+//              res.send(err);
+//          }
+//         res.statusCode=200;
+//         res.setHeader('Content-Type','application/json');
+//         res.json({success:true,result});
+//     },(err) => next(err))
+//     .catch((err) => next(err));
+// })
 
-merchRouter.route(':/merchId/setVisibility')
+merchRouter.route('/:merchId/setVisibility')
 .options( (req, res) => {res.sendStatus(200); })
 .post(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
     Merchs.findByIdAndUpdate(req.params.merchId,{
-       $set:{'visibility' : req.params.visibility} 
+       $set:{'visibility' : req.body.visibility} 
     },{new:true},function(err,result){
         if(err){
             res.send(err);
@@ -331,10 +343,49 @@ merchRouter.route(':/merchId/setVisibility')
    .catch((err) => next(err));
 });
 
+
+merchRouter.route('/:merchId/addTags')
+.options( (req, res) => {res.sendStatus(200); })
+.get(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
+    Merchs.findById(req.params.merchId)
+    .then((merch) =>{
+        res.statusCode=200;
+       res.setHeader('Content-Type','application/json');
+       res.json({success:true,"tags": merch.tags });
+    })
+})
+.post(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
+    Merchs.findByIdAndUpdate(req.params.merchId,{
+       $addToSet:{'tags' : req.body.tags} 
+    },{new:true},function(err,result){
+        if(err){
+            res.send(err);
+        }
+       res.statusCode=200;
+       res.setHeader('Content-Type','application/json');
+       res.json({success:true,result});
+   },(err) => next(err))
+   .catch((err) => next(err));
+})
+.delete(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
+    Merchs.findByIdAndUpdate(req.params.merchId,{
+        $pull:{'tags' : req.body.tags} 
+     },{new:true},function(err,result){
+         if(err){
+             res.send(err);
+         }
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,result});
+    },(err) => next(err))
+    .catch((err) => next(err));
+});
+
 merchRouter.route('/:merchId/cart')
 .options( (req, res) => {res.sendStatus(200); })
 .get(authenticate.verifyUser,(req,res,next)=>{
-    Users.findById(req.params._id)
+    Users.findById(req.user._id)
+//    .populate('cart.merch')
     .then((user) =>{
         res.statusCode=200;
         res.setHeader('Content-Type','application/json');
@@ -353,13 +404,52 @@ Merchs.findById(req.params.merchId)
             }
         res.statusCode=200;
         res.setHeader('Content-Type','application/json');
-        res.json({success:true,user});
+        res.json({success:true,cart:user.cart});
         });
         
     },(err) => next(err))
     .catch((err) => next(err));
 
 });
+
+merchRouter.route('/:merchId/cart/:cartItemId')
+.options( (req, res) => {res.sendStatus(200); })
+.get(authenticate.verifyUser,(req,res,next)=>{
+    Users.findById(req.user._id)
+//    .populate('cart.merch')
+    .then((user) =>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,cart:user.cart});
+    },(err) => next(err))
+    .catch((err) => next(err));
+})
+.put(authenticate.verifyUser,(req,res,next)=>{
+
+    const update = {$set:{'cart.$[cartItem].color':req.body.color,'cart.$[cartItem].size':req.body.size,'cart.$[cartItem].units':req.body.units}}
+    const options = {arrayFilters :[{'cartItem._id':req.params.cartItemId}],new:true};
+    Users.findByIdAndUpdate(req.user._id,
+    update,options,function(err,user){
+        if(err){
+            res.send(err);
+        }
+    res.statusCode=200;
+    res.setHeader('Content-Type','application/json');
+    res.json({success:true,cart:user.cart});
+    });
+})
+.delete(authenticate.verifyUser,(req,res,next)=>{
+    const update = {$pull:{'cart':{'_id' :req.params.cartItemId}}}
+    Users.findByIdAndUpdate(req.user._id,
+    update,{new:true})
+    .then((user) =>{
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,cart:user.cart});
+    },(err) => next(err))
+    .catch((err) => next(err));
+})
+
 
 
 
@@ -391,6 +481,15 @@ Merchs.findOneAndUpdate({_id:req.params.merchId,'category.variants':{$elemMatch:
 
 merchRouter.route('/:merchId/review')
 .options((req, res) => { res.sendStatus(200); })
+.get(authenticate.verifyUser, (req,res,next ) => {
+    Merchs.findById(req.params.merchId)
+    .then((merch)=> {
+        res.statusCode=200;
+        res.setHeader('Content-Type','application/json');
+        res.json({success:true,review:merch.review});
+    },(err) => next(err))
+    .catch((err) => next(err));
+})
 .post(authenticate.verifyUser, (req,res,next) => {
     if(req.body != null){
         req.body.author = req.user._id;

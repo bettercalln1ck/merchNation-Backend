@@ -115,7 +115,7 @@ const merchSchema= new Schema({
         type: Boolean,
         default: false
     },
-    tag:[{
+    tags:[{
         type:String,
         es_indexed:true
     }],

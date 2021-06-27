@@ -66,7 +66,7 @@ uploadRouter.route('/:merchId/merchImageUpload')
             res.setHeader('Content-Type', 'application/json');
             res.json({err: err});
           }
-          erchs.findOneAndUpdate(
+          Merchs.findOneAndUpdate(
             {
                 _id:req.params.merchId,
                 "category.variants":{
@@ -74,7 +74,7 @@ uploadRouter.route('/:merchId/merchImageUpload')
                     "color": req.body.color
                 }
             }},
-            { $set: {
+            { $addToSet: {
                         "category.variants.$[outer].images":req.body.images
                     }
             },
