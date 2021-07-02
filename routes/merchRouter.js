@@ -2,7 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
-const Merchs = require('../models/merchModel');
+const {Merchs,Comments} = require('../models/merchModel');
 const Users = require('../models/userModel')
 
 const merchRouter = express.Router();
@@ -412,43 +412,7 @@ Merchs.findById(req.params.merchId)
 
 });
 
-merchRouter.route('/:merchId/cart/:cartItemId')
-.options( (req, res) => {res.sendStatus(200); })
-.get(authenticate.verifyUser,(req,res,next)=>{
-    Users.findById(req.user._id)
-//    .populate('cart.merch')
-    .then((user) =>{
-        res.statusCode=200;
-        res.setHeader('Content-Type','application/json');
-        res.json({success:true,cart:user.cart});
-    },(err) => next(err))
-    .catch((err) => next(err));
-})
-.put(authenticate.verifyUser,(req,res,next)=>{
 
-    const update = {$set:{'cart.$[cartItem].color':req.body.color,'cart.$[cartItem].size':req.body.size,'cart.$[cartItem].units':req.body.units}}
-    const options = {arrayFilters :[{'cartItem._id':req.params.cartItemId}],new:true};
-    Users.findByIdAndUpdate(req.user._id,
-    update,options,function(err,user){
-        if(err){
-            res.send(err);
-        }
-    res.statusCode=200;
-    res.setHeader('Content-Type','application/json');
-    res.json({success:true,cart:user.cart});
-    });
-})
-.delete(authenticate.verifyUser,(req,res,next)=>{
-    const update = {$pull:{'cart':{'_id' :req.params.cartItemId}}}
-    Users.findByIdAndUpdate(req.user._id,
-    update,{new:true})
-    .then((user) =>{
-        res.statusCode=200;
-        res.setHeader('Content-Type','application/json');
-        res.json({success:true,cart:user.cart});
-    },(err) => next(err))
-    .catch((err) => next(err));
-})
 
 
 
@@ -493,16 +457,13 @@ merchRouter.route('/:merchId/review')
 .post(authenticate.verifyUser, (req,res,next) => {
     if(req.body != null){
         req.body.author = req.user._id;
-        req.body.post = req.params.postId;
         Merchs.findByIdAndUpdate(req.params.merchId,{
-            $push:{'review': req.body} 
-        },{new:true},function(err,result){
-             if(err){
-                 res.send(err);
-             }
+            $push:{'review':  req.body} 
+        },{new:true})
+        .then((result)=>{
             res.statusCode=200;
             res.setHeader('Content-Type','application/json');
-            res.json({success:true,result});
+            res.json({success:true,review:result.review});
         },(err) => next(err))
         .catch((err) => next(err));
     }
@@ -524,80 +485,122 @@ merchRouter.route('/:merchId/review')
 merchRouter.route('/:merchId/review/:ratingId')
 .options((req, res) => { res.sendStatus(200); })
 .get(authenticate.verifyUser, (req,res,next) => {
-    Merchs.findOne({_id:req.params.merchId,'review._id':req.params.ratingId})
-    .populate({
-        path: 'review',
-        populate:{path:'author'}
-    })
-    .then((rating) => {
+    Merchs.findById(req.params.merchId)
+    .then((merch) =>{
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
-        res.json({success:true, rating})
-    },(err) => next(err))
+        res.json({success:true,review:merch.review.id(req.params.ratingId)});
+    }, (err) => next(err))
     .catch((err) => next(err));
+    // Merchs.findOne({_id:req.params.merchId,'review._id':req.params.ratingId})
+    // .populate({
+    //     path: 'review',
+    //     populate:{path:'author'}
+    // })
+    // .then((rating) => {
+    //     res.statusCode = 200;
+    //     res.setHeader('Content-Type', 'application/json');
+    //     res.json({success:true, review:rating.review})
+    // },(err) => next(err))
+    // .catch((err) => next(err));
 })
 .post( authenticate.verifyUser, (req, res, next) => {
     res.statusCode = 403;
     res.end('POST operation not supported on '+ req.params.merchId);
 })
 .put(authenticate.verifyUser, (req, res, next) => {
-    Merchs.findById(req.params.merchId)
-    .then((merch) => {
-        if(merch != null){
-            if(!comment.author.equals(req.user._id)){
-                var err = new Error('You are not authorized to update this comment!');
-                err.status = 403;
-                return next(err);
-            }
-            req.body.author = req.user._id;
-            Comments.findByIdAndUpdate(req.params.commentId, {
-                $set: req.body
-            }, {new : true})
-            .then((comment) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json({success:true})
-            }, (err) => next(err));
-        }
-        else {
-            err = new Error('Comment ' + req.params.commentId + ' not found!');
-            err.status = 404;
-            return next(err);            
-        }
-    }, (err) => next(err))
-    .catch((err) => next(err));
+    data = {$set:{'review.$[cmnt].comment':req.body.comment,'review.$[cmnt].rating':req.body.rating}}
+    filter = [{'cmnt._id':req.params.ratingId,'cmnt.author':req.user._id}]
+    Merchs.findByIdAndUpdate(req.params.merchId,data,{arrayFilters:filter,new:true})
+    .then((merch)=> {
+
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success:true,review:merch.review.id(req.params.ratingId)});
+    },(err) => next(err))
+     .catch((err) => next(err));
+    // Merchs.findById(req.params.merchId)
+    // .populate({
+    //      path: 'review',
+    //      populate:{path:'author'}
+    //  })
+    // .then((merch) => {
+    //     if(merch != null){
+    //         var comment = merch.review.id(req.params.ratingId);
+
+    //         if(!comment.author.equals(req.user._id)){
+    //             var err = new Error('You are not authorized to update this comment!');
+    //             err.status = 403;
+    //             return next(err);
+    //         }
+
+    //         comment.comment = req.body.comment;
+    //         comment.rating = req.body.rating;
+
+
+    //         merch.save((err,result) =>{
+    //             if (err){
+    //                 return next(err);   
+    //             }
+    //             res.statusCode = 200;
+    //             res.setHeader('Content-Type', 'application/json');
+    //             res.json({success:true,review:result.review});
+    //         });
+    //     }
+    //     else {
+    //         err = new Error('Comment ' + req.params.commentId + ' not found!');
+    //         err.status = 404;
+    //         return next(err);            
+    //     }
+    // }, (err) => next(err))
+    // .catch((err) => next(err));
 })
 .delete( authenticate.verifyUser, (req, res, next) => {
-    Comments.findById(req.params.commentId)
-    .then((comment) => {
-        if(comment != null){
-            if(!comment.author.equals(req.user._id)){
-                var err = new Error('You are not authorized to delete this post!');
-                err.status = 403;
-                return next(err);
-            }
-            Posts.findByIdAndUpdate(req.params.postId, {
-                $pull: {comments: req.params.commentId},
-                $inc: {commentcount: -1}
-            }, {new:true}, function(err, result) {
-                if(err){
-                    res.send(err);
-                }
-            });
-            Comments.findByIdAndRemove(req.params.commentId)
-            .then((comment) => {
-                res.statusCode = 200;
-                res.setHeader('Content-Type', 'application/json');
-                res.json({success:true})
-            }, (err) => next(err))
-        }
-        else{
-            err = new Error('Comment ' + req.params.commentId + ' not found!');
-            err.status = 404;
-            return next(err); 
-        }
-    }, (err) => next(err))
-    .catch((err) => next(err));
+    data = {$pull:{'review':{'_id':req.params.ratingId,'author':req.user._id}}}
+  //  filter = [{'cmnt._id':req.params.ratingId,'cmnt.author._id':req.user._id}]
+    Merchs.findByIdAndUpdate(req.params.merchId,data,{new:true})
+    .then((merch)=> {
+        
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json({success:true,review:merch.review});
+    },(err) => next(err))
+     .catch((err) => next(err));
+    // Merchs.findById(req.params.merchId)
+    // .populate({
+    //      path: 'review',
+    //      populate:{path:'author'}
+    //  })
+    // .then((merch) => {
+    //     if(merch != null){
+    //         var comment = merch.review.id(req.params.ratingId);
+
+    //         if(!comment.author.equals(req.user._id)){
+    //             var err = new Error('You are not authorized to update this comment!');
+    //             err.status = 403;
+    //             return next(err);
+    //         }
+
+    //         comment.comment = req.body.comment;
+    //         comment.rating = req.body.rating;
+
+
+    //         merch.save((err,result) =>{
+    //             if (err){
+    //                 return next(err);   
+    //             }
+    //             res.statusCode = 200;
+    //             res.setHeader('Content-Type', 'application/json');
+    //             res.json({success:true,review:result.review});
+    //         });
+    //     }
+    //     else {
+    //         err = new Error('Comment ' + req.params.commentId + ' not found!');
+    //         err.status = 404;
+    //         return next(err);            
+    //     }
+    // }, (err) => next(err))
+    // .catch((err) => next(err));
 });
 
 

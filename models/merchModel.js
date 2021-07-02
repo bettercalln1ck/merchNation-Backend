@@ -26,7 +26,7 @@ var elasticClient = new elasticsearch.Client({
 var Rating =new Schema({
     author:  {
         type: mongoose.Schema.Types.ObjectId,
-	ref: 'User'
+	    ref: 'User'
     },
     comment:{
         type:String,    
@@ -129,6 +129,7 @@ const merchSchema= new Schema({
     });
 
     var Merchs=mongoose.model('Merch',merchSchema);
+    var Comments = mongoose.model('Comments',Rating);
         // stream = Merchs.synchronize(),
         // count = 0;
     
@@ -143,4 +144,7 @@ const merchSchema= new Schema({
         // console.log(err);            .populate('seller')
         // });
 
-    module.exports= Merchs;
+    module.exports= {
+       Merchs: Merchs,
+       Comments: Comments
+    };

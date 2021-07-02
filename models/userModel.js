@@ -83,6 +83,7 @@ var User=new Schema({
         timestamps: true
 });
 
+//@TODO Location Age
 User.plugin(passportLocalMongoose);
 
 module.exports=mongoose.model('User',User);
