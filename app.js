@@ -22,6 +22,7 @@ var usersRouter = require('./routes/userRouter');
 var merchRouter = require('./routes/merchRouter');
 var uploadRouter =require('./routes/uploadRouter');
 var orderRouter =require('./routes/orderRouter');
+var searchRouter = require('./routes/searchRouter');
 
 var app = express();
 
@@ -77,6 +78,7 @@ app.use('/users', usersRouter);
 app.use('/merchs',merchRouter);
 app.use('/upload',uploadRouter);
 app.use('/order',orderRouter);
+app.use('/search',searchRouter);
 
 
 function auth(req,res,next) {

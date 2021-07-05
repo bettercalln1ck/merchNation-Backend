@@ -46,7 +46,7 @@ const orderSchema = new mongoose.Schema(
     paidAt: { type: Date },
     isDelivered: { type: Boolean, default: false },
     deliveredAt: { type: Date },
-    //deliveryState:{type: String}  
+    //TODO  deliveryState:{type: String} 1.success  2.pending 3.active  4.canceled
     
   },
   {
