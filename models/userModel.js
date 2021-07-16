@@ -71,7 +71,8 @@ var User=new Schema({
 		merch:{type: mongoose.Schema.Types.ObjectId,ref: 'Merch',required: true},
 		color:{type:String,required:true},
 		size:{type:String,enum: ['L','XL'],required: true},
-		units:{type:Number ,required:true}
+		units:{type:Number ,required:true},
+		couponCode:{type:String}
 		}],
 	order:{
         type: mongoose.Schema.Types.ObjectId,

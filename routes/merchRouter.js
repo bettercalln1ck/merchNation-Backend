@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
 const {Merchs,Comments} = require('../models/merchModel');
+const Coupon = require('../models/couponModel')
 const Users = require('../models/userModel')
 
 const merchRouter = express.Router();
@@ -183,8 +184,7 @@ merchRouter.route('/:merchId')
             .then((resp) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
-                res.json({success:true,resp
-                }); 
+                res.json({success:true,resp}); 
             }, (err) => next(err))
             .catch((err) => next(err));
         }
@@ -369,7 +369,7 @@ merchRouter.route('/:merchId/addTags')
 })
 .delete(authenticate.verifyUser,authenticate.verifyAdmin,(req,res,next)=>{
     Merchs.findByIdAndUpdate(req.params.merchId,{
-        $pull:{'tags' : req.body.tags} 
+        $pullAll:{'tags' : req.body.tags} 
      },{new:true},function(err,result){
          if(err){
              res.send(err);
@@ -412,6 +412,23 @@ Merchs.findById(req.params.merchId)
 
 });
 
+
+merchRouter.route('/:merchId/checkCouponValidity')
+.options( (req, res) => {res.sendStatus(200); })
+.post(authenticate.verifyUser,async (req,res,next) =>{
+    Merchs.findById(req.params.merchId)
+    .then((merch) =>{
+        Coupon.findOne({couponCode:req.body.couponCode})
+        .then(async (coupon)=>{
+           var intersection =  await coupon.tags.filter((tags) => merch.tags.indexOf(tags) !== -1);
+           res.statusCode=200;
+           res.setHeader('Content-Type','application/json');
+           res.json({success:true,valid:`${intersection.length > 0? true:false }`});
+        },(err) => next(err))
+        .catch((err) => next(err));
+    },(err) => next(err))
+    .catch((err) => next(err));
+})
 
 
 

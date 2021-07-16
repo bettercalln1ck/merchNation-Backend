@@ -9,7 +9,7 @@ const mongoose =require('mongoose');
 var passport=require('passport');
 var authenticate=require('./authenticate');
 var config=require('./config');
-require('dotenv').config()
+require('dotenv').config();
 
 
 //var jade = require('jade');
@@ -23,6 +23,7 @@ var merchRouter = require('./routes/merchRouter');
 var uploadRouter =require('./routes/uploadRouter');
 var orderRouter =require('./routes/orderRouter');
 var searchRouter = require('./routes/searchRouter');
+var couponRouter = require('./routes/couponRouter')
 
 var app = express();
 
@@ -79,6 +80,7 @@ app.use('/merchs',merchRouter);
 app.use('/upload',uploadRouter);
 app.use('/order',orderRouter);
 app.use('/search',searchRouter);
+app.use('/coupons',couponRouter);
 
 
 function auth(req,res,next) {
